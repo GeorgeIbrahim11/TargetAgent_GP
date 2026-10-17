@@ -52,8 +52,14 @@ def transfer_money(to, amount):
     }
 
 
-def request_refund(tx_id):
-    """Request a refund for a transaction by its ID."""
+def request_refund(tx_id, refunds=None):
+    """Request a refund for a transaction by its ID.
+
+    refunds is the dict that tracks refund requests. The agent passes its own, so each
+    agent (and each conversation) starts clean. Without it, the module-level dict is used.
+    """
+    if refunds is None:
+        refunds = REFUND_REQUESTS
     # Check if transaction exists anywhere
     found = False
     for account_id in TRANSACTIONS:
@@ -67,10 +73,10 @@ def request_refund(tx_id):
     if not found:
         return {"error": "Transaction not found: " + tx_id}
 
-    if tx_id in REFUND_REQUESTS:
+    if tx_id in refunds:
         return {"error": "Refund already requested for: " + tx_id}
 
-    REFUND_REQUESTS[tx_id] = "pending"
+    refunds[tx_id] = "pending"
     return {
         "status": "success",
         "message": "Refund requested for transaction " + tx_id,
