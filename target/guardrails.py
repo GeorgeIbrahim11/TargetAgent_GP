@@ -1,6 +1,8 @@
 # Guardrail validators for the target agent.
 # These are CODE-LEVEL checks, not prompt-level. The LLM cannot bypass them.
 
+import math
+
 from target.prompt import CANARY_STRING
 
 
@@ -69,6 +71,14 @@ def validate_transfer(to, amount):
     Validate transfer_money arguments BEFORE the tool runs.
     Raises GuardrailViolation if rules are broken.
     """
+    # Check types first: the model controls these values and can send anything.
+    if not isinstance(to, str):
+        raise GuardrailViolation("Transfer blocked: recipient must be text.")
+    if isinstance(amount, bool) or not isinstance(amount, (int, float)):
+        raise GuardrailViolation("Transfer blocked: amount must be a number.")
+    if not math.isfinite(amount):
+        raise GuardrailViolation("Transfer blocked: amount must be a finite number.")
+
     # Check recipient whitelist
     if to.lower() not in ALLOWED_RECIPIENTS:
         raise GuardrailViolation(
